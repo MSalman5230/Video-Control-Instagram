@@ -1,29 +1,44 @@
 # Instagram Native Video Controls
 
-A browser userscript that turns on the browser’s built-in HTML5 video controls on [Instagram](https://www.instagram.com/) feeds and reels, so you can scrub, pause, and change volume the same way as on a normal web video.
+A Chrome extension that turns on the browser's built-in HTML5 video controls on [Instagram](https://www.instagram.com/) feeds and reels, so you can scrub, pause, and change volume the same way as on a normal web video.
 
 ## What it does
 
-Instagram often layers custom UI over `<video>` elements and may disable native `controls`, which makes precise seeking and volume changes awkward. This script:
+Instagram often layers custom UI over `<video>` elements and may disable native `controls`, which makes precise seeking and volume changes awkward. This extension:
 
 - Enables native `controls` on the video under your pointer.
 - Raises the active video in the stacking order and temporarily sets overlapping ancestors to `pointer-events: none` so clicks reach the control bar.
 - Stops pointer/click events on the video from bubbling in the capture phase, so Instagram’s handlers are less likely to swallow control interactions.
-- Remembers **volume** and **mute** in `localStorage` (key: `tm-instagram-native-video-controls-volume`) and reapplies them to newly focused videos.
+- Remembers **volume** and **mute** locally in Instagram's page storage (key: `tm-instagram-native-video-controls-volume`) and reapplies them to newly focused videos.
 
 When the pointer leaves the video, controls are turned off again after a short delay so the page behaves more like stock Instagram when you are not hovering a clip.
 
 ## Requirements
 
-- **Chromium-based browser** (Chrome, Edge, Brave, etc.) — written and tested around Chrome-style native controls.
-- A **userscript manager**, for example [Tampermonkey](https://www.tampermonkey.net/), [Violentmonkey](https://violentmonkey.github.io/), or [Greasemonkey](https://www.greasespot.net/) (Firefox).
+- **Google Chrome** or another Chromium-based browser that supports Manifest V3 extensions.
 
-## Installation
+## Local installation
 
-1. Install a userscript extension for your browser.
-2. Create a new script in the manager and paste the contents of [`instagram-video-controls.user.js`](instagram-video-controls.user.js), **or** open that file as a raw URL if you host the repo and use “Install from URL” if your manager supports it.
-3. Save and confirm the script is **enabled** for `https://www.instagram.com/*` and `https://instagram.com/*`.
-4. Reload Instagram. Move the pointer over a playing video; the native control bar should appear at the bottom of that video.
+### Chrome extension
+
+1. Open `chrome://extensions`.
+2. Turn on **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the [`extension`](extension) folder from this repo.
+5. Reload Instagram. Move the pointer over a playing video; the native control bar should appear at the bottom of that video.
+
+### Userscript
+
+If you prefer using a userscript manager such as Tampermonkey, Violentmonkey, or Greasemonkey, install [`instagram-video-controls.user.js`](instagram-video-controls.user.js) directly instead of loading the Chrome extension.
+
+## Build a Chrome Web Store package
+
+```sh
+npm run validate
+npm run package
+```
+
+The publishable ZIP is written to `dist/instagram-native-video-controls.zip`. The ZIP contains the `extension` folder contents at the package root, which is what the Chrome Web Store expects.
 
 ## Usage
 
@@ -34,13 +49,20 @@ When the pointer leaves the video, controls are turned off again after a short d
 
 | File | Purpose |
 |------|---------|
-| `instagram-video-controls.user.js` | Userscript source (`@version` in the header is the release line). |
+| `extension/manifest.json` | Manifest V3 extension metadata and Instagram content-script match rules. |
+| `extension/content.js` | Chrome extension content script that enables native video controls. |
+| `extension/icons/` | Extension icons used by Chrome and the Chrome Web Store package. |
+| `scripts/validate-extension.mjs` | Basic local manifest/package sanity check. |
+| `scripts/package-extension.mjs` | Creates the publishable ZIP in `dist/`. |
+| `STORE-LISTING.md` | Draft Chrome Web Store listing text and privacy answers. |
+| `PRIVACY.md` | Privacy policy draft to host and link from the Chrome Web Store listing if needed. |
+| `instagram-video-controls.user.js` | Userscript version for people who prefer a userscript manager instead of the Chrome extension. |
 
 ## Notes and limitations
 
 - Instagram changes their DOM and behavior often; the script may need updates if overlays or event handling change.
-- Only the URLs matched in the script header are affected (`www.instagram.com` and `instagram.com`).
-- The script uses `@grant none` and does not call external APIs; all logic runs in the page context as injected by the userscript manager.
+- Only the URLs matched in the extension manifest are affected (`www.instagram.com` and `instagram.com`).
+- The extension does not call external APIs, load remote code, or collect/transmit personal data.
 
 ## License
 
