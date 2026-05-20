@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "package": "node scripts/package-extension.mjs",
-    "validate": "node scripts/validate-extension.mjs"
-  },
-  "devDependencies": {}
-}
