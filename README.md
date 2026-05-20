@@ -9,7 +9,8 @@ Instagram often layers custom UI over `<video>` elements and may disable native 
 - Enables native `controls` on the video under your pointer.
 - Raises the active video in the stacking order and temporarily sets overlapping ancestors to `pointer-events: none` so clicks reach the control bar.
 - Stops pointer/click events on the video from bubbling in the capture phase, so Instagram's handlers are less likely to swallow control interactions.
-- Remembers **volume** and **mute** locally in Instagram's page storage (key: `tm-instagram-native-video-controls-volume`) and reapplies them to newly focused videos.
+- Remembers **volume** locally in Instagram's page storage (key: `tm-instagram-native-video-controls-volume`) and reapplies it to newly focused videos.
+- Leaves Instagram's own bottom-right mute/unmute button available by hiding this script's native mute button and yielding that relative corner zone back to Instagram.
 
 When the pointer leaves the video, controls are turned off again after a short delay so the page behaves more like stock Instagram when you are not hovering a clip.
 
@@ -27,7 +28,8 @@ When the pointer leaves the video, controls are turned off again after a short d
 ## Usage
 
 - **Hover** a video to show native controls; **move away** to hide them after a brief delay.
-- Use the scrubber, play/pause, and volume as usual. Volume and mute persist across visits for the same origin.
+- Use the scrubber, play/pause, and volume as usual. Volume persists across visits for the same origin.
+- Move to the bottom-right corner of the video to use Instagram's own mute/unmute button.
 
 ## Files
 

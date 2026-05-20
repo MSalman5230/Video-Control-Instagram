@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Instagram Native Video Controls
 // @namespace    https://instagram.com/
-// @version      2.0.0
+// @version      2.0.2
 // @description  Force Chrome's native HTML5 video controls to work on Instagram videos.
 // @author       You
 // @match        https://www.instagram.com/*
@@ -17,6 +17,11 @@
   const ACTIVE_VIDEO_CLASS = "tm-igvc-native-active";
   const CLICK_THROUGH_CLASS = "tm-igvc-click-through";
   const VOLUME_STORAGE_KEY = "tm-instagram-native-video-controls-volume";
+  const INSTAGRAM_MUTE_SAFE_ZONE_WIDTH_RATIO = 0.12;
+  const INSTAGRAM_MUTE_SAFE_ZONE_HEIGHT_RATIO = 0.1;
+  const INSTAGRAM_MUTE_SAFE_ZONE_MIN_SIZE = 56;
+  const INSTAGRAM_MUTE_SAFE_ZONE_MAX_WIDTH = 96;
+  const INSTAGRAM_MUTE_SAFE_ZONE_MAX_HEIGHT = 128;
 
   let activeVideo = null;
   let hideTimer = null;
@@ -40,6 +45,10 @@
 
       .${CLICK_THROUGH_CLASS} {
         pointer-events: none !important;
+      }
+
+      video.${ACTIVE_VIDEO_CLASS}::-webkit-media-controls-mute-button {
+        display: none !important;
       }
     `;
 
@@ -126,7 +135,6 @@
       if (!Number.isFinite(volumePercent)) return null;
 
       return {
-        muted: Boolean(savedValue.muted),
         volumePercent: Math.min(100, Math.max(0, volumePercent)),
       };
     } catch {
@@ -141,7 +149,6 @@
       localStorage.setItem(
         VOLUME_STORAGE_KEY,
         JSON.stringify({
-          muted: video.muted,
           volumePercent,
         }),
       );
@@ -159,7 +166,6 @@
     if (!savedValue) return;
 
     video.volume = savedValue.volumePercent / 100;
-    video.muted = savedValue.muted || savedValue.volumePercent === 0;
   }
 
   function handleVolumeChange(event) {
@@ -214,6 +220,42 @@
     activeVideo = null;
   }
 
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function getInstagramMuteSafeZone(video) {
+    const rect = video.getBoundingClientRect();
+    const width = clamp(
+      rect.width * INSTAGRAM_MUTE_SAFE_ZONE_WIDTH_RATIO,
+      INSTAGRAM_MUTE_SAFE_ZONE_MIN_SIZE,
+      INSTAGRAM_MUTE_SAFE_ZONE_MAX_WIDTH,
+    );
+    const height = clamp(
+      rect.height * INSTAGRAM_MUTE_SAFE_ZONE_HEIGHT_RATIO,
+      INSTAGRAM_MUTE_SAFE_ZONE_MIN_SIZE,
+      INSTAGRAM_MUTE_SAFE_ZONE_MAX_HEIGHT,
+    );
+
+    return {
+      left: rect.right - width,
+      right: rect.right,
+      top: rect.bottom - height,
+      bottom: rect.bottom,
+    };
+  }
+
+  function isInInstagramMuteSafeZone(video, clientX, clientY) {
+    const zone = getInstagramMuteSafeZone(video);
+
+    return (
+      clientX >= zone.left &&
+      clientX <= zone.right &&
+      clientY >= zone.top &&
+      clientY <= zone.bottom
+    );
+  }
+
   function scheduleDeactivateVideo() {
     window.clearTimeout(hideTimer);
     hideTimer = window.setTimeout(() => {
@@ -227,6 +269,12 @@
     const video = getVideoAtPoint(event.clientX, event.clientY);
 
     if (video) {
+      if (isInInstagramMuteSafeZone(video, event.clientX, event.clientY)) {
+        isPointerOverVideo = false;
+        deactivateVideo();
+        return;
+      }
+
       isPointerOverVideo = true;
       activateVideo(video);
       return;
